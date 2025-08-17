@@ -3,8 +3,140 @@
 <head>
     <title>첫 페이지</title>
 </head>
+  <style>
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      background: #222;
+      color: #fff;
+      font-size: 2rem;
+      font-family: 'Courier New', monospace;
+      cursor: pointer;
+    }
+    #text {
+      border-right: 2px solid #fff;
+      white-space: pre-wrap; /* ✅ 자동 줄바꿈 허용 */
+      overflow: hidden;
+    }
+  </style>
 <body>
-    <h1>Hello, Django!</h1>
-    <img src="https://media.discordapp.net/attachments/1131606289433235477/1406336638560501820/raw.png?ex=68a2188f&is=68a0c70f&hm=26ae6cdc7fdd94f7dd41bec4acb05ba5a81238fd7031a16bbea60a4ec0892099&=&format=webp&quality=lossless&width=645&height=968" alt="Fortune Image">
+    <!-- <h1>Hello, Django!</h1> -->
+    <img src="https://media.discordapp.net/attachments/1131606289433235477/1406336638560501820/raw.png?ex=68a2188f&is=68a0c70f&hm=26ae6cdc7fdd94f7dd41bec4acb05ba5a81238fd7031a16bbea60a4ec0892099&=&format=webp&quality=lossless&width=645&height=968" alt="Fortune Image" style="display: inline; width: 300px; height: auto;">
+    
+    
+    
+    <!-- <h1>너의 성격은...</h1>
+    
+    <p>
+        너는의 성격은....
+        <b>{{ result.장점_traits.0 }}</b>이고 <b>{{ result.장점_traits.1 }}</b>이구나 냥! 또....
+    </p>
+    <p>
+        <b>{{ result.장점_traits.2 }}</b>이고 <b>{{ result.장점_traits.3 }}</b>도 있네 냥!
+    </p>
+    <p>
+        <b>{{ result.장점_traits.4 }}</b>까지 있다 냥~!
+    </p>
+
+    <hr>
+    
+    <h2>그런데.. 너 성격의 단점은....</h2>
+    <p>
+        <b>{{ result.단점_traits.0 }}</b>이고 <b>{{ result.단점_traits.1 }}</b>이구나 냥! 또....
+    </p>
+    <p>
+        <b>{{ result.단점_traits.2 }}</b>이고 <b>{{ result.단점_traits.3 }}</b>도 있네 냥!
+    </p>
+
+    <hr>
+    
+    <h2>흠.... 그렇다면 너의 귀인/인연은 어떤 타입일까....</h2>
+    <p>
+        바로... <b>{{ result.귀인_인연.0.오행 }}</b> 오행을 가진 <b>{{ result.귀인_인연.0.사람_유형 }}</b>이구나 냥!
+    </p>
+    <p>
+        또... <b>{{ result.귀인_인연.1.오행 }}</b> 오행을 가진 <b>{{ result.귀인_인연.1.사람_유형 }}</b>이구나 냥!
+    </p>
+
+    <hr>
+    
+    <h2>마지막으로 너에게 추천하는 직업군은...</h2>
+    <p>
+        <b>{{ result.추천_직업군|join:", " }}</b>이야 냥!
+    </p>
+
+    <hr>
+    
+    <h3>앞으로 나아갈 방향은...</h3>
+    <p>
+        <b>{{ result.앞으로_나아갈_방향 }}</b> 냥!
+    </p> -->
+    <div id="text"></div>
+    <script>
+    const lines = [
+      "반갑다냥~",
+      "너의 생년월일로 성격과 다양한 정보를 알려주겠다 냥~",
+      "너 성격은....",
+      "{{ result.장점_traits.0 }}이고 {{ result.장점_traits.1 }}이구나 냥! 또....",
+      "{{ result.장점_traits.2 }}이고 {{ result.장점_traits.3 }}도 있네 냥!",
+      "{{ result.장점_traits.4 }}까지 있다 냥~!",
+      "그런데.. 너 성격의 단점은....",
+      "{{ result.단점_traits.0 }}이고 {{ result.단점_traits.1 }}이구나 냥! 또....",
+      "{{ result.단점_traits.2 }}이고 {{ result.단점_traits.3 }}도 있네 냥!",
+      "흠.... 그렇다면 너의 귀인/인연은 어떤 타입일까....",
+      "바로... {{ result.귀인_인연.0.오행 }} 오행을 가진 {{ result.귀인_인연.0.사람_유형 }}이구나 냥!",
+      "또... {{ result.귀인_인연.1.오행 }} 오행을 가진 {{ result.귀인_인연.1.사람_유형 }}이구나 냥!",
+      "마지막으로 너에게 추천하는 직업군은...",
+      "{{ result.추천_직업군|join:', ' }} 냥!",   
+      "앞으로 나아갈 방향은...",
+      "{{ result.앞으로_나아갈_방향 }} 냥!",                                                                                       
+    ];
+
+    let lineIndex = 0;
+    let charIndex = 0;
+    let typingSpeed = 100; // 글자 나오는 속도(ms)
+    const textElement = document.getElementById("text");
+    let isTyping = false;
+
+    function typeLine(line) {
+      isTyping = true;
+      textElement.textContent = "";
+      charIndex = 0;
+
+      // 👉 만약 line이 HTML 태그면 (input 포함)
+    //     if (line.startsWith("<") && line.endsWith(">")) {
+    //     textElement.innerHTML = line; // 그냥 태그 그대로 출력
+    //     isTyping = false;
+    //     return;
+    //   }   
+
+      const typeInterval = setInterval(() => {
+        textElement.textContent += line[charIndex];
+        charIndex++;
+        if (charIndex === line.length) {
+          clearInterval(typeInterval);
+          isTyping = false;
+        }
+      }, typingSpeed);
+    }
+
+    function showNextLine() {
+      if (isTyping) return; // 타이핑 중이면 클릭 무시
+      if (lineIndex < lines.length) {
+        typeLine(lines[lineIndex]);
+        lineIndex++;
+      } else {
+        textElement.textContent = "그럼이만 냥!";
+      }
+    }
+
+    // 처음 실행
+    showNextLine();
+
+    // 클릭하면 다음 문장
+    document.body.addEventListener("click", showNextLine);
+  </script>
 </body>
 </html>
