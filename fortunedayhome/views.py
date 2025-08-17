@@ -76,14 +76,52 @@ def check_over_under(elements):
 # -------------------------
 # 5️⃣ 특수살
 def check_special_sals(saju):
-    specials=[]
-    day_branch=saju["일주"][1]
-    if day_branch in ["인","사","신","해"]: specials.append("역마살")
-    month_branch=saju["월주"][1]
-    if (day_branch, month_branch) in [("자","사"),("인","술")]: specials.append("천덕살")
-    day_gan=saju["일주"][0]
-    if day_gan in ["병","임"]: specials.append("양인살")
-    if day_branch in ["축","오","술"]: specials.append("망신살")
+    """
+    saju = {"년주":"갑자","월주":"병인","일주":"경오","시주":"경오"}
+    return specials = ["역마살","망신살",...]
+    """
+
+    # 각 주에서 지지 추출
+    year_branch = saju["년주"][1]
+    month_branch = saju["월주"][1]
+    day_branch = saju["일주"][1]
+    hour_branch = saju["시주"][1]
+
+    # 삼합 그룹 매핑
+    triad_by_branch = {
+        '해':'해묘미','묘':'해묘미','미':'해묘미',
+        '인':'인오술','오':'인오술','술':'인오술',
+        '사':'사유축','유':'사유축','축':'사유축',
+        '신':'신자진','자':'신자진','진':'신자진'
+    }
+
+    # 12신살 룩업 테이블
+    sinsal_table = {
+        '겁살':   {'인오술':'해','사유축':'인','신자진':'사','해묘미':'신'},
+        '재살':   {'인오술':'자','사유축':'묘','신자진':'오','해묘미':'유'},
+        '천살':   {'인오술':'축','사유축':'진','신자진':'미','해묘미':'술'},
+        '지살':   {'인오술':'인','사유축':'사','신자진':'신','해묘미':'해'},
+        '년살':   {'인오술':'묘','사유축':'오','신자진':'유','해묘미':'자'},
+        '월살':   {'인오술':'진','사유축':'미','신자진':'술','해묘미':'축'},
+        '망신살': {'인오술':'사','사유축':'신','신자진':'해','해묘미':'인'},
+        '장성살': {'인오술':'오','사유축':'유','신자진':'자','해묘미':'묘'},
+        '반안살': {'인오술':'미','사유축':'술','신자진':'축','해묘미':'진'},
+        '역마살': {'인오술':'신','사유축':'해','신자진':'인','해묘미':'사'},
+        '육해살': {'인오술':'유','사유축':'자','신자진':'묘','해묘미':'오'},
+        '화개살': {'인오술':'술','사유축':'축','신자진':'진','해묘미':'미'}
+    }
+
+    specials = []
+    branches = [year_branch, month_branch, day_branch, hour_branch]
+
+    # 🔑 연지 기준과 일지 기준을 모두 계산
+    for base_branch in [year_branch, day_branch]:
+        triad = triad_by_branch[base_branch]
+        for branch in branches:
+            for name, cols in sinsal_table.items():
+                if cols[triad] == branch and name not in specials:
+                    specials.append(name)
+
     return specials
 
 # -------------------------
@@ -110,37 +148,104 @@ def check_patterns(saju):
 # -------------------------
 # 7️⃣ 점수 기반 장점/단점
 def score_traits(saju):
-    elements=calculate_elements(saju)
-    over_under=check_over_under(elements)
-    specials=check_special_sals(saju)
-    patterns=check_patterns(saju)
+    elements = calculate_elements(saju)
+    over_under = check_over_under(elements)
+    specials = check_special_sals(saju)
+    patterns = check_patterns(saju)
 
-    good_scores=[0]*len(good_traits)
-    for i,t in enumerate(good_traits):
-        if "창의" in t and over_under.get("목")=="부족": good_scores[i]+=3
-        if "호기심" in t and "역마살" in specials: good_scores[i]+=2
-        if "융통" in t and "양인살" in specials: good_scores[i]+=2
+    good_scores = [0] * len(good_traits)
+    bad_scores = [0] * len(bad_traits)
 
-    bad_scores=[0]*len(bad_traits)
-    for i,t in enumerate(bad_traits):
-        if "충동" in t and patterns: bad_scores[i]+=3
-        if "완벽" in t and over_under.get("토")=="과다": bad_scores[i]+=2
-        if "예민" in t and "망신살" in specials: bad_scores[i]+=2
+    for i, t in enumerate(good_traits):
+        # -----------------------------
+        # 🔹 오행 부족 → 장점 강화
+        if "창의적성격" in t and over_under.get("목") == "부족": good_scores[i] += 3
+        if "도전적인성격" in t and over_under.get("화") == "부족": good_scores[i] += 2
+        if "책임감 있는성격" in t and over_under.get("토") == "부족": good_scores[i] += 2
+        if "분석적인성격" in t and over_under.get("금") == "부족": good_scores[i] += 2
+        if "현명한성격" in t and over_under.get("수") == "부족": good_scores[i] += 3
 
-    return good_scores,bad_scores
+        # -----------------------------
+        # 🔹 오행 과다 → 리더/견고 성향 강화
+        if "리더십 있는성격" in t and over_under.get("화") == "과다": good_scores[i] += 2
+        if "인내심 있는성격" in t and over_under.get("토") == "과다": good_scores[i] += 2
+
+        # -----------------------------
+        # 🔹 신살 반영
+        if "호기심 많은성격" in t and "역마살" in specials: good_scores[i] += 2
+        if "융통성 있는성격" in t and "양인살" in specials: good_scores[i] += 2
+        if "감정 표현 풍부한성격" in t and "망신살" in specials: good_scores[i] += 2
+        if "활발성격" in t and "장성살" in specials: good_scores[i] += 2
+        if "직관적인성격" in t and "화개살" in specials: good_scores[i] += 2
+
+        # -----------------------------
+        # 🔹 패턴 반영
+        if "협력적인성격" in t and "합" in patterns: good_scores[i] += 3
+        if "독창적인성격" in t and "충" in patterns: good_scores[i] += 2
+
+    for i, t in enumerate(bad_traits):
+        # -----------------------------
+        # 🔹 오행 과다 → 단점 강화
+        if "고집 센성격" in t and over_under.get("목") == "과다": bad_scores[i] += 2
+        if "급한성격" in t and over_under.get("화") == "과다": bad_scores[i] += 3
+        if "완벽주의적인성격" in t and over_under.get("토") == "과다": bad_scores[i] += 3
+        if "냉정한성격" in t and over_under.get("금") == "과다": bad_scores[i] += 2
+        if "우유부단한성격" in t and over_under.get("수") == "과다": bad_scores[i] += 2
+
+        # -----------------------------
+        # 🔹 오행 부족 → 약점 드러남
+        if "무계획적인성격" in t and over_under.get("토") == "부족": bad_scores[i] += 3
+        if "산만" in t and over_under.get("목") == "부족": bad_scores[i] += 2
+        if "불안정한성격" in t and over_under.get("수") == "부족": bad_scores[i] += 3
+
+        # -----------------------------
+        # 🔹 신살 반영
+        if "예민한성격" in t and "망신살" in specials: bad_scores[i] += 2
+        if "변덕스러운성격" in t and "역마살" in specials: bad_scores[i] += 2
+        if "과격한성격" in t and "양인살" in specials: bad_scores[i] += 3
+        if "고독" in t and "화개살" in specials: bad_scores[i] += 2  # '고독' 계열 매핑
+
+        # -----------------------------
+        # 🔹 패턴 반영
+        if "충동적인성격" in t and "충" in patterns: bad_scores[i] += 3
+        if "의존적인성격" in t and "합" in patterns: bad_scores[i] += 2
+        if "충돌이 잦은성격" in t and "충" in patterns: bad_scores[i] += 2
+
+    return good_scores, bad_scores
 
 # -------------------------
 # 8️⃣ 귀인/인연
 def get_gwiin(saju):
-    elements=calculate_elements(saju)
-    gwiin=[]
-    for el in ["목","화","토","금","수"]:
-        if elements.count(el)<=1:
-            gwiin.append({"오행":el,"사람_유형":"신중하고 안정적인 사람"})
-        elif elements.count(el)>=3:
-            gwiin.append({"오행":el,"사람_유형":"활발하고 창의적인 사람"})
+    elements = calculate_elements(saju)
+    gwiin = []
+    for el in ["목", "화", "토", "금", "수"]:
+        cnt = elements.count(el)
+        if cnt == 0:
+            gwiin.append({
+                "오행": el,
+                "사람_유형": "전혀 없는 기운을 채워주는 특별한 귀인, 인생 전환점에서 등장하는 사람"
+            })
+        elif cnt == 1:
+            gwiin.append({
+                "오행": el,
+                "사람_유형": "신중하고 안정적인 사람, 부족한 기운을 도와주는 인연"
+            })
+        elif cnt == 2:
+            gwiin.append({
+                "오행": el,
+                "사람_유형": "비슷한 성향으로 자연스럽게 어울리는 동류 인연, 협력하기 좋은 사람"
+            })
+        elif cnt == 3:
+            gwiin.append({
+                "오행": el,
+                "사람_유형": "활발하고 창의적인 사람, 같은 파장으로 끌리지만 충돌도 있을 수 있는 사람"
+            })
+        elif cnt >= 4:
+            gwiin.append({
+                "오행": el,
+                "사람_유형": "과한 기운을 눌러주고 균형 잡아주는 사람, 제어·통제형 인연"
+            })
     return gwiin
-
 # -------------------------
 # 9️⃣ 직업군 점수 기반 추천
 def score_jobs(saju, good_scores, bad_scores):
@@ -186,23 +291,9 @@ def generate_personality_print(saju):
 
 # -------------------------
 # 테스트
-saju_input = {"년주":"갑자","월주":"병인","일주":"신사","시주":"경오"}
+saju_input = {"년주":"정축","월주":"신해","일주":"경오","시주":"임오"}
 result = generate_personality_print(saju_input)
-# print(result)
-# print("반갑다냥~ 나는 너의 성격을 점춰주는 스님고양이다 냥!")
-# print("흐음....보자..")
-# print("너는의 성격은....")
-# print("너는의 성격은...." + result["장점 traits"][0]+ "이고 " +result["장점 traits"][1]+  "이구나 냥! 또....")
-# print("너는의 성격은...." + result["장점 traits"][2]+ "이고 " +result["장점 traits"][3]+  "도 있네 냥 ! ")
-# print("너는의 성격은...." +result["장점 traits"][4]+ "까지있다 냥~! ")
-# print("그런데.. 너 성격의 단점은...." + result["단점 traits"][0]+ "이고 " +result["단점 traits"][1]+  "이구나 냥! 또....")
-# print("너 성격의 단점은...." + result["단점 traits"][2]+ "이고 " +result["단점 traits"][3]+  "도 있네 냥 ! ")
-# print("흠.... 그렇다면 너의 귀인/인연은 어떤 타입일까....")
-# print("바로..."+ result["귀인/인연"][0]["오행"] + " 오행을 가진 " + result["귀인/인연"][0]["사람 유형"] + "이구나 냥!")
-# print("또..."+ result["귀인/인연"][1]["오행"] + " 오행을 가진 " + result["귀인/인연"][1]["사람 유형"] + "이구나 냥!")
-# print("마지막으로 너에게 추천하는 직업군은... " + ", ".join(result["추천 직업군"]) + "이야 냥!")
-# print("앞으로 나아갈 방향은... " + result["앞으로 나아갈 방향"] + " 냥!")
-# print("도움이 되었으면 좋겠다 냥!!!! 담에 또 찾아오라 냥~!")
+
 
 
 # Create your views here.
